@@ -1,0 +1,25 @@
+name: 'Deep Sea Currents'
+description: 'The flow used by all user facing features in coopstools-homebrew'
+outputs:
+  tag:
+    description: 'Newly created tag'
+    value: ${{ steps.tag_version.outputs.new_tag }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Bump version and push tag
+      id: tag_version
+      uses: mathieudutour/github-tag-action@v5.5
+      with:
+        custom_release_rules: "break:major,feat:minor,fix:patch"
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Build and Push image
+      uses: mr-smithers-excellent/docker-build-push@v5
+      with:
+        image: ${{ github.event.repository.name }}
+        tags: latest, ${{ steps.tag_version.outputs.new_tag }}
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Display new version
+      run: echo "Tagged and pushed ${{ steps.tag_version.outputs.new_tag }}"
